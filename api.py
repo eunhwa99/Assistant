@@ -48,8 +48,8 @@ async def concept_map(data: TextInput):
     prompt = (
         "<|start_header_id|>system<|end_header_id|>\n\n"
         """You are an expert in summarizing academic papers.
-        Your task is to analyze the provided paper text and generate a valid JSON representation of the key concepts and their relationships.
-        Do not include any explanation or extra text
+        Generate only a valid JSON representation of the key concepts and their relationships.
+        Each relationship should be represented with a short verb phrase excluding the concept names. 
         The output should be in the following format:
         {
             "nodes": [
@@ -73,7 +73,6 @@ async def concept_map(data: TextInput):
         max_tokens=-1,
         temperature=0.2,
     )
-    print(response)
     result = response['choices'][0]['text']
     try:
         data = extract_json(result)
@@ -86,6 +85,21 @@ async def concept_map(data: TextInput):
     for edge in data["edges"]:
         net.add_edge(edge["from"], edge["to"], label=edge.get("label", ""))
 
+  # ⚠️ 겹침 방지를 위한 레이아웃 및 물리 옵션 설정
+    # net.force_atlas_2based(
+    #     gravity=-50,
+    #     central_gravity=0.01,
+    #     spring_length=200,
+    #     spring_strength=0.05,
+    #     damping=0.9,
+    #     overlap=0.1,
+    # )
+
+    # 또는 아래로 대체 가능
+    net.barnes_hut(gravity=-30000, central_gravity=0.3, spring_length=200)
+
+    # UI에서 물리 시뮬레이션 설정 가능하도록 버튼 추가
+    net.show_buttons(filter_=["physics"])
     # Pyvis graph를 HTML 문자열로 반환
     html_path = "/tmp/concept_map.html"
     net.save_graph(html_path)
